@@ -44,35 +44,30 @@ def dict_to_difflist(deck1, deck2):
 
 
 def split_by_section(deck):
-    deck_parts = [('Main',list())]#default for titleless decks
+    deck_parts = []
     for line in deck:
 	if line.endswith(':\n'):
 	    deck_parts.append((line[:-2], list()))
 	else:
+            if not deck_parts:
+                deck_parts = [('Main',list())]#default for titleless decks
 	    deck_parts[-1][1].append(line)
 
     return deck_parts
 	
         
 def main(deck_paths):
-
-    deck1 = open(deck_paths[0], 'r').readlines()
-    deck2 = open(deck_paths[1], 'r').readlines()
-
-    deck1_parts = split_by_section(deck1)
-    deck2_parts = split_by_section(deck2)
-
+    deck1_parts = split_by_section(open(deck_paths[0], 'r').readlines())
+    deck2_parts = split_by_section(open(deck_paths[1], 'r').readlines())
 
     # determine max space needed
     max_space = max(len(max([x[0] for x in deck1_parts], key=len)), len(max([y[0] for y in deck2_parts], key=len)))+1
     output_format = '%-30s|%-{0}s|%-5s|%-{0}s'.format(max_space, max_space) #dumb formatting
 
-
-
-
     tot1 = 0
     tot_both = 0
     tot2 = 0
+
     for (title1, deck1), (title2, deck2) in zip(deck1_parts, deck2_parts):
         if not deck1 and not deck2:
             continue
