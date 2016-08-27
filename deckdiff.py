@@ -6,9 +6,7 @@ import collections
 deckpat = re.compile('(\d+)x?-?\s*(\w.*)')
 notcard = re.compile('^\s*$')
 
-def deck_to_dict(deck_path):
-    deck_file = open(deck_path, 'r')
-    deck = deck_file.readlines()
+def deck_to_dict(deck):
     deck_dict = collections.defaultdict(int)
     for line in deck:
         if notcard.match(line):
@@ -23,7 +21,6 @@ def deck_to_dict(deck_path):
     # for if there are no nums
 
     return deck_dict
-    #TODO detect sideboard
 
 def dict_to_difflist(deck1, deck2):
     commondict = dict() #Bolt (d1, both, d2)
@@ -44,18 +41,56 @@ def dict_to_difflist(deck1, deck2):
         else: #completely shared
             commondict[card] = ('',deck1[card],'')
     return commondict
+
+
+def split_by_section(deck):
+    deck_parts = [('Main',list())]#default for titleless decks
+    for line in deck:
+	if line.endswith(':\n'):
+	    deck_parts.append((line[:-2], list()))
+	else:
+	    deck_parts[-1][1].append(line)
+
+    return deck_parts
+	
         
 def main(deck_paths):
-    deck1 = deck_to_dict(deck_paths[0])
-    deck2 = deck_to_dict(deck_paths[1])
 
-    cd = dict_to_difflist(deck1, deck2)
-    output_format = '%-30s|%-5s|%-5s|%-5s'
-    print output_format % ('Card', 'Deck1', 'Both', 'Deck2')
-    for card, (d1, both, d2) in cd.iteritems():
-        #print '%-12i%-12i' % (10 ** i, 20 ** i)
-        print output_format % (card, d1, both, d2)
+    deck1 = open(deck_paths[0], 'r').readlines()
+    deck2 = open(deck_paths[1], 'r').readlines()
 
+    deck1_parts = split_by_section(deck1)
+    deck2_parts = split_by_section(deck2)
+
+
+    # determine max space needed
+    max_space = max(len(max([x[0] for x in deck1_parts], key=len)), len(max([y[0] for y in deck2_parts], key=len)))+1
+    output_format = '%-30s|%-{0}s|%-5s|%-{0}s'.format(max_space, max_space) #dumb formatting
+
+
+
+
+    tot1 = 0
+    tot_both = 0
+    tot2 = 0
+    for (title1, deck1), (title2, deck2) in zip(deck1_parts, deck2_parts):
+        if not deck1 and not deck2:
+            continue
+	title1 += '1'
+	title2 += '2'
+	deck1 = deck_to_dict(deck1)
+	deck2 = deck_to_dict(deck2)
+        cd = dict_to_difflist(deck1, deck2)
+
+        print ''
+        print output_format % ('Card', title1, 'Both', title2)
+        for card, (d1, both, d2) in cd.iteritems():
+            print output_format % (card, d1, both, d2)
+            tot1 += int(d1 or 0)
+            tot_both += int(both or 0)
+            tot2 += int(d2 or 0)
+        
+    print 'Deck1 total:', tot1, 'Both total', tot_both, 'Deck2 total', tot2
 
 if __name__ == '__main__':
     main(sys.argv[1:])
