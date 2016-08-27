@@ -16,14 +16,10 @@ def deck_to_dict(deck):
             deck_dict[m.groups()[1].lower()] =  int(m.groups()[0])
         else:
             deck_dict[line.lower()] = 1
-
-    ##TODO collections.Counter(['Lightning Bolt','Lightning Bolt','Lightning Bolt'])
-    # for if there are no nums
-
     return deck_dict
 
 def dict_to_difflist(deck1, deck2):
-    commondict = dict() #Bolt (d1, both, d2)
+    commondict = dict() #tuple format (d1, both, d2)
 
     for card in (deck1.viewkeys() | deck2.viewkeys()): #these are lists
         if deck1[card] == 0:
@@ -43,7 +39,7 @@ def dict_to_difflist(deck1, deck2):
     return commondict
 
 
-def split_by_section(deck):
+def split_by_section(deck): #main, sideboard, etc
     deck_parts = []
     for line in deck:
 	if line.endswith(':\n'):
@@ -55,8 +51,8 @@ def split_by_section(deck):
 
     return deck_parts
 	
-        
 def main(deck_paths):
+     #TODO add option to not split by section
     deck1_parts = split_by_section(open(deck_paths[0], 'r').readlines())
     deck2_parts = split_by_section(open(deck_paths[1], 'r').readlines())
 
@@ -71,13 +67,13 @@ def main(deck_paths):
     for (title1, deck1), (title2, deck2) in zip(deck1_parts, deck2_parts):
         if not deck1 and not deck2:
             continue
-	title1 += '1'
-	title2 += '2'
+        if title1 == title1:
+            title1 += '1'
+            title2 += '2'
 	deck1 = deck_to_dict(deck1)
 	deck2 = deck_to_dict(deck2)
         cd = dict_to_difflist(deck1, deck2)
 
-        print ''
         print output_format % ('Card', title1, 'Both', title2)
         for card, (d1, both, d2) in cd.iteritems():
             print output_format % (card, d1, both, d2)
@@ -90,4 +86,3 @@ def main(deck_paths):
 if __name__ == '__main__':
     main(sys.argv[1:])
 
-    
