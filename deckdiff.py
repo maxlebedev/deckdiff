@@ -1,6 +1,7 @@
 import re
 import sys
 import collections
+import colorama
 #read in 2 deck files, print out their differences
 
 deckpat = re.compile('(\d+)x?-?\s*(\w.*)')
@@ -15,15 +16,11 @@ def deck_to_dict(deck):
         if m:
             deck_dict[m.groups()[1].lower()] =  int(m.groups()[0])
         else:
-            deck_dict[line.lower()] = 1
-
-    ##TODO collections.Counter(['Lightning Bolt','Lightning Bolt','Lightning Bolt'])
-    # for if there are no nums
-
+            deck_dict[line.lower()[:-1]] = 1
     return deck_dict
 
 def dict_to_difflist(deck1, deck2):
-    commondict = dict() #Bolt (d1, both, d2)
+    commondict = dict() #tuple format (d1, both, d2)
 
     for card in (deck1.viewkeys() | deck2.viewkeys()): #these are lists
         if deck1[card] == 0:
@@ -42,8 +39,7 @@ def dict_to_difflist(deck1, deck2):
             commondict[card] = ('',deck1[card],'')
     return commondict
 
-
-def split_by_section(deck):
+def split_by_section(deck): #main, sideboard, etc
     deck_parts = []
     for line in deck:
 	if line.endswith(':\n'):
@@ -54,9 +50,22 @@ def split_by_section(deck):
 	    deck_parts[-1][1].append(line)
 
     return deck_parts
+
+
+def colored_print(output_format, card, d1, both, d2):
+    cfmt = ''
+    if both == '':
+        cfmt += colorama.Style.DIM
+    if d1 != '':
+        cfmt += colorama.Fore.GREEN
+    else:
+        cfmt += colorama.Fore.RED
+    print cfmt+ output_format % (card, d1, both, d2)
+    #print(colorama.Style.RESET_ALL)
 	
         
 def main(deck_paths):
+    #TODO add option to not split by section
     deck1_parts = split_by_section(open(deck_paths[0], 'r').readlines())
     deck2_parts = split_by_section(open(deck_paths[1], 'r').readlines())
 
@@ -68,19 +77,21 @@ def main(deck_paths):
     tot_both = 0
     tot2 = 0
 
+    colorama.init()
     for (title1, deck1), (title2, deck2) in zip(deck1_parts, deck2_parts):
         if not deck1 and not deck2:
             continue
-	title1 += '1'
-	title2 += '2'
+        if title1 == title1:
+            title1 += '1'
+            title2 += '2'
 	deck1 = deck_to_dict(deck1)
 	deck2 = deck_to_dict(deck2)
         cd = dict_to_difflist(deck1, deck2)
 
-        print ''
+    
         print output_format % ('Card', title1, 'Both', title2)
         for card, (d1, both, d2) in cd.iteritems():
-            print output_format % (card, d1, both, d2)
+            colored_print(output_format, card, d1, both, d2)
             tot1 += int(d1 or 0)
             tot_both += int(both or 0)
             tot2 += int(d2 or 0)
