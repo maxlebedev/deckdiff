@@ -1,6 +1,7 @@
 import re
 import sys
 import collections
+import argparse
 #read in 2 deck files, print out their differences
 
 deckpat = re.compile('(\d+)x?-?\s*(\w.*)')
@@ -39,10 +40,10 @@ def dict_to_difflist(deck1, deck2):
     return commondict
 
 
-def split_by_section(deck): #main, sideboard, etc
+def split_by_section(split, deck): #main, sideboard, etc
     deck_parts = []
     for line in deck:
-	if line.endswith(':\n'):
+	if line.endswith(':\n') and split:
 	    deck_parts.append((line[:-2], list()))
 	else:
             if not deck_parts:
@@ -51,10 +52,16 @@ def split_by_section(deck): #main, sideboard, etc
 
     return deck_parts
 	
-def main(deck_paths):
+def main(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("dp1", action="store", help="Path to deck1")
+    parser.add_argument("dp2", action="store", help="Path to deck2")
+    parser.add_argument("-i", action="store_true", help="Ignore sections")
+    args = parser.parse_args()
+
      #TODO add option to not split by section
-    deck1_parts = split_by_section(open(deck_paths[0], 'r').readlines())
-    deck2_parts = split_by_section(open(deck_paths[1], 'r').readlines())
+    deck1_parts = split_by_section(not args.i, open(args.dp1, 'r').readlines())
+    deck2_parts = split_by_section(not args.i, open(args.dp2, 'r').readlines())
 
     # determine max space needed
     max_space = max(len(max([x[0] for x in deck1_parts], key=len)), len(max([y[0] for y in deck2_parts], key=len)))+1
